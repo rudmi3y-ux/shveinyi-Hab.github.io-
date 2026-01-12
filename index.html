@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Учет мастерской "Швейный HUB"</title>
+    
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <style>
+        :root {
+            --primary: #2d5a6e;
+            --accent: #e84c3d;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --info: #2980b9;
+            --bg-light: #f8f9fa;
+            --bg-white: #ffffff;
+            --border: #e0e0e0;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e8ecf1 100%);
+            color: var(--text-dark);
+            padding: 15px;
+            min-height: 100vh;
+            -webkit-text-size-adjust: 100%;
+            padding-bottom: 80px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* --- ГЛОБАЛЬНЫЙ ЗАГРУЗЧИК --- */
+        #globalLoader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s;
+        }
+        .spinner-big {
+            width: 50px; height: 50px;
+            border: 5px solid #e0e0e0;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        .loader-text { font-weight: 600; color: var(--primary); font-size: 16px; }
+
+        /* --- ШАПКА --- */
+        header {
+            background: var(--bg-white); padding: 20px; border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px;
+            border-left: 5px solid var(--primary);
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
+        }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .logo-img { height: 50px; width: auto; border-radius: 8px; border: 1px solid var(--border); object-fit: cover; }
+        header h1 { color: var(--primary); font-size: 20px; margin-bottom: 2px; line-height: 1.2; }
+        
+        .header-stats { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; margin-top: 10px; }
+        
+        .stat-badge { 
+            background: #fff; padding: 15px; border-radius: 12px; font-size: 13px; 
+            border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            flex: 1; min-width: 90px; text-align: center;
+        }
+        .stat-badge strong { 
+            display: block; font-size: 20px; font-weight: 800; 
+            margin-top: 5px; white-space: nowrap; letter-spacing: -0.5px;
+        }
+
+        /* --- МЕНЮ (ВКЛАДКИ) --- */
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 12px 15px; border: none; background: var(--bg-white);
+            color: var(--text-light); cursor: pointer; border-radius: 8px;
+            font-weight: 600; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 14px;
+        }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(45, 90, 110, 0.3); }
+
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- ФОРМЫ --- */
+        .form-section {
+            background: var(--bg-white); padding: 20px; border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+        .form-section h2 { color: var(--primary); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; font-size: 18px; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-weight: 600; color: var(--text-dark); font-size: 13px; }
+        
+        input, select, textarea {
+            padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 16px; font-family: inherit; transition: 0.2s; width: 100%; box-sizing: border-box;
+            background: #fff; appearance: none; -webkit-appearance: none;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(45, 90, 110, 0.1); }
+
+        .check-group { display: flex; gap: 10px; }
+
+        /* --- КНОПКИ --- */
+        .btn { 
+            padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; 
+            font-weight: 600; transition: 0.2s; font-size: 15px; 
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px; 
+            min-height: 48px; 
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--accent); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-light); }
+        .btn-sm { padding: 8px 12px; font-size: 13px; min-height: 32px; }
+
+        /* КНОПКИ БЫСТРЫХ ДАТ (Скрыты на ПК) */
+        .date-quick-btns { display: none; } 
+        .date-btn {
+            background: #e8f4f8; color: var(--primary); border: none;
+            padding: 6px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: 0.2s;
+        }
+        .date-btn:active { background: var(--primary); color: white; }
+
+        /* ПЛАВАЮЩАЯ КНОПКА (FAB) */
+        .fab-btn {
+            position: fixed; bottom: 25px; right: 25px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background: var(--primary); color: white;
+            border: none; box-shadow: 0 4px 15px rgba(45, 90, 110, 0.4);
+            font-size: 30px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 1000; transition: transform 0.2s;
+        }
+        .fab-btn:active { transform: scale(0.9); }
+
+        /* --- ТАБЛИЦЫ --- */
+        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; background: var(--bg-white); min-width: 900px; }
+        thead { background: var(--primary); color: white; }
+        th { padding: 12px 15px; text-align: left; font-weight: 600; font-size: 13px; }
+        td { padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        tbody tr:hover { background: var(--bg-light); }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .bg-inc { background: #dcfce7; color: #166534; }
+        .bg-exp { background: #fee2e2; color: #991b1b; }
+
+        /* --- ТАБЛИЦА АНАЛИТИКИ --- */
+        #productTable { min-width: 100% !important; table-layout: fixed; }
+        #productTable th, #productTable td { padding: 8px 5px; font-size: 13px; white-space: normal; word-wrap: break-word; vertical-align: middle; }
+        #productTable th:nth-child(1) { width: 50%; } 
+        #productTable th:nth-child(2) { width: 20%; text-align: center; } 
+        #productTable th:nth-child(3) { width: 30%; text-align: right; }
+        #productTable td:nth-child(2) { text-align: center; }
+        #productTable td:nth-child(3) { text-align: right; }
+        .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+        .product-name-cell { display: flex; align-items: center; line-height: 1.2; }
+
+        /* Панель фильтров */
+        .month-filter-bar {
+            background: #e8f4f8; padding: 15px; border-radius: 12px; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 15px; border: 1px solid #bce0ef;
+        }
+        .month-filter-bar select { width: auto; min-width: 200px; border-color: #2d5a6e; font-weight: bold; }
+        
+        .type-filters { display: flex; gap: 10px; margin-top: 5px; font-size: 14px; align-items: center; }
+        .type-filters label { cursor: pointer; position: relative; }
+        .type-filters input { display: none; }
+
+        .filter-chip {
+            padding: 10px 20px; border-radius: 20px; border: 1px solid #ccc;
+            background: #fff; color: #7f8c8d; font-weight: 600; font-size: 14px;
+            display: flex; align-items: center; gap: 5px; transition: all 0.2s; user-select: none;
+        }
+        #filterInc:checked + .filter-chip { background: var(--success); color: white; border-color: var(--success); box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3); }
+        #filterInc:checked + .filter-chip::before { content: '✓'; font-weight: bold; }
+        #filterExp:checked + .filter-chip { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3); }
+        #filterExp:checked + .filter-chip::before { content: '✓'; font-weight: bold; }
+
+        /* --- АНАЛИТИКА --- */
+        .comparison-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .comparison-card { background: var(--bg-white); padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; border: 1px solid var(--border); }
+        .comparison-value { font-size: 18px; font-weight: 700; margin-bottom: 5px; color: var(--text-dark); word-break: break-all; }
+        .comparison-label { font-size: 11px; color: var(--text-light); text-transform: uppercase; }
+        
+        .chart-container { background: var(--bg-white); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid var(--border); }
+        .chart-wrapper { height: 300px; position: relative; }
+
+        .pagination { display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 15px; }
+        
+        /* Уведомления */
+        .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 30px; color: white; display: none; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-weight: 600; width: max-content; max-width: 85%; text-align: center; }
+        .toast-success { background: #27ae60; }
+        .toast-error { background: #e84c3d; }
+        .toast-warn { background: #f39c12; }
+        
+        /* МАЛЕНЬКИЙ СПИННЕР (ДЛЯ КНОПОК) */
+        .spinner-small { 
+            width: 18px; height: 18px; 
+            border: 2px solid #ffffff; 
+            border-top-color: transparent; 
+            border-radius: 50%; 
+            animation: spin 0.8s infinite; 
+            display: none; 
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+
+        /* =========================================
+           СПЕЦИАЛЬНАЯ АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ
+           ========================================= */
+        @media (max-width: 768px) {
+            .tabs { flex-direction: column; gap: 10px; }
+            .tab-btn { width: 100%; text-align: center; padding: 14px; font-size: 16px; }
+
+            .month-filter-bar { flex-direction: column; align-items: stretch; gap: 12px; padding: 15px; }
+            .month-filter-bar select, .month-filter-bar button { width: 100%; }
+            .type-filters { justify-content: space-between; width: 100%; gap: 10px; }
+            .type-filters label { flex: 1; }
+            .filter-chip { justify-content: center; width: 100%; }
+
+            .header-stats { flex-direction: column; gap: 8px; }
+            .stat-badge { width: 100%; padding: 15px; }
+
+            /* ПОКАЗЫВАЕМ КНОПКИ ДАТ ТОЛЬКО НА МОБИЛКАХ */
+            .date-quick-btns { display: flex; gap: 8px; margin-bottom: 5px; }
+
+            /* Таблица Журнала (карточки) */
+            #mainTable thead { display: none; }
+            #mainTable { min-width: 100%; display: block; }
+            #mainTable tbody { display: block; }
+            #mainTable tr { 
+                display: block; background: #fff; border: 1px solid var(--border); 
+                border-radius: 12px; margin-bottom: 16px; padding: 16px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            }
+            #mainTable td { 
+                display: flex; justify-content: space-between; align-items: center; 
+                padding: 10px 0; border-bottom: 1px solid #f0f0f0; text-align: right;
+                font-size: 15px;
+            }
+            #mainTable td:last-child { border-bottom: none; padding-top: 15px; justify-content: space-between; gap: 10px; }
+            #mainTable td::before { 
+                content: attr(data-label); font-weight: 600; color: var(--text-light); 
+                font-size: 14px; text-align: left; margin-right: 15px;
+            }
+            #mainTable button { width: 48%; }
+
+            .product-analysis-wrapper { flex-direction: column !important; gap: 20px !important; }
+            .product-analysis-item { min-width: 100% !important; width: 100% !important; }
+            .chart-wrapper { width: 100% !important; overflow: hidden; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="globalLoader">
+    <div class="spinner-big"></div>
+    <div class="loader-text">Загрузка данных...</div>
+</div>
+
+<button class="fab-btn" onclick="app.switchTab('operations'); window.scrollTo({top:0, behavior:'smooth'})">+</button>
+
+<div class="container">
+    <header>
+        <div class="header-left">
+            <img src="Вывеска ШХ (1).jpg" alt="Logo" class="logo-img" onerror="this.style.display='none'">
+            <div>
+                <h1>📊 Швейный HUB</h1>
+                <p style="font-size: 13px; color: var(--text-light)">
+                    <span id="statusDot" style="color: var(--warning)">●</span> <span id="statusText">Подключение...</span>
+                </p>
+            </div>
+        </div>
+        <div class="header-stats">
+            <div class="stat-badge" style="border-top: 4px solid var(--success)">
+                Доход <strong id="headInc" style="color:var(--success)">0 ₽</strong>
+            </div>
+            <div class="stat-badge" style="border-top: 4px solid var(--accent)">
+                Расход <strong id="headExp" style="color:var(--accent)">0 ₽</strong>
+            </div>
+            <div class="stat-badge" style="border-top: 4px solid var(--primary)">
+                Баланс <strong id="headBal" style="color:var(--primary)">0 ₽</strong>
+            </div>
+        </div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="app.switchTab('operations')">📝 Журнал операций</button>
+        <button class="tab-btn" onclick="app.switchTab('analytics')">📈 Аналитика</button>
+        <button class="tab-btn" onclick="app.switchTab('reports')">📋 Отчеты</button>
+    </div>
+
+    <div id="operations" class="tab-content active">
+        <div class="form-section">
+            <h2 id="formTitle">Новая запись</h2>
+            <input type="hidden" id="editId">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Дата</label>
+                    <div class="date-quick-btns">
+                        <button type="button" class="date-btn" onclick="app.setQuickDate(0)">Сегодня</button>
+                        <button type="button" class="date-btn" onclick="app.setQuickDate(-1)">Вчера</button>
+                    </div>
+                    <input type="date" id="opDate">
+                </div>
+                <div class="form-group">
+                    <label>Тип</label>
+                    <select id="opType" onchange="app.updateCategories()">
+                        <option value="Доход">📈 Доход</option>
+                        <option value="Расход">📉 Расход</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Категория</label><select id="opCategory"></select></div>
+                <div class="form-group"><label>Сумма (₽)</label><input type="number" id="opAmount" placeholder="0"></div>
+                <div class="form-group">
+                    <label>Чек (Серия / Номер)</label>
+                    <div class="check-group">
+                        <input type="text" id="opCheckSeries" placeholder="АА" style="width:35%">
+                        <input type="text" id="opCheckNumber" placeholder="12345" style="width:65%">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Клиент</label>
+                    <input type="text" id="opClient" list="clientList" placeholder="Поиск..." autocomplete="off" oninput="app.onInput(this, 'clientList', 'clients')">
+                    <datalist id="clientList"></datalist>
+                </div>
+
+                <div class="form-group"><label>Оплата</label><select id="opPayment"><option>Наличные</option><option>Карта</option><option>Перевод</option><option>Безнал</option></select></div>
+                <div class="form-group"><label>Статус</label><select id="opStatus"><option value="Да">Принята</option><option value="Нет">В ожидании</option></select></div>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Комментарий</label>
+                <input type="text" id="opDesc" list="descList" placeholder="Пошив брюк..." oninput="app.onInput(this, 'descList', 'descriptions')">
+                <datalist id="descList"></datalist>
+            </div>
+
+            <div style="display:flex; gap:10px">
+                <button class="btn btn-primary" style="width:100%" id="saveBtn" onclick="app.submitForm()">
+                    <span class="spinner-small" id="btnSpinner"></span> 
+                    <span id="saveBtnText">Сохранить</span>
+                </button>
+                <button class="btn btn-warning hidden" id="cancelBtn" onclick="app.resetForm()">Отмена</button>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap:wrap; gap:10px">
+                <h2>Журнал операций</h2>
+                <div style="display:flex; gap:10px">
+                    <input type="text" placeholder="🔍 Поиск..." oninput="app.handleSearch(this.value)" style="width: 120px; padding: 10px;">
+                    <button class="btn btn-sm btn-success" onclick="app.exportExcel()">📥 XLS</button>
+                </div>
+            </div>
+
+            <div class="month-filter-bar">
+                <div style="width: 100%">
+                    <label>📅 Период:</label>
+                    <select id="monthPicker" onchange="app.loadData()"><option value="">Загрузка...</option></select>
+                </div>
+                <div class="type-filters">
+                    <label>
+                        <input type="checkbox" id="filterInc" checked onchange="app.applyFilters()">
+                        <span class="filter-chip">Доходы</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="filterExp" checked onchange="app.applyFilters()">
+                        <span class="filter-chip">Расходы</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="mainTable">
+                    <thead><tr><th>Дата</th><th>Тип</th><th>Категория</th><th>Сумма</th><th>Клиент</th><th>№ Чека</th><th>Оплата</th><th>Описание</th><th>Действия</th></tr></thead>
+                    <tbody id="tableBody"><tr><td colspan="9" style="text-align:center; padding:20px; color:#999">Загрузка данных...</td></tr></tbody>
+                </table>
+            </div>
+            <div id="paginationControls" class="pagination"></div>
+        </div>
+    </div>
+
+    <div id="analytics" class="tab-content">
+        <div class="form-section">
+            <h2>📊 Обзор месяца</h2>
+            <div id="analyticsResults">
+                <div class="comparison-grid" id="analyticsComparison"></div>
+                
+                <div class="form-grid">
+                     <div class="chart-container"><h3>📈 По дням</h3><div class="chart-wrapper"><canvas id="trendChart"></canvas></div></div>
+                     <div class="chart-container"><h3>🥧 Категории (Общее)</h3><div class="chart-wrapper"><canvas id="catChart"></canvas></div></div>
+                </div>
+
+                <div class="chart-container" style="border-top: 4px solid var(--accent);">
+                    <h3>🧵 Типы изделий</h3>
+                    <p style="color:#777; font-size:13px; margin-bottom:15px">На основе слов в описании</p>
+                    <div class="product-analysis-wrapper" style="display:flex; flex-wrap:wrap; gap:20px;">
+                        <div class="product-analysis-item" style="flex:1; min-width:280px; height:300px;"><canvas id="productChart"></canvas></div>
+                        <div class="product-analysis-item" style="flex:1; min-width:280px;">
+                            <div class="table-container" style="overflow-x:hidden !important; border:none;">
+                                <table id="productTable">
+                                    <thead><tr><th>Изделие</th><th>Шт.</th><th>Руб.</th></tr></thead>
+                                    <tbody id="productTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="reports" class="tab-content">
+        <div class="form-section">
+            <h2>Скачать отчет</h2>
+            <p style="margin-bottom:15px; color: #666">Полные данные текущего месяца в формате Excel.</p>
+            <button class="btn btn-primary" style="width:100%" onclick="app.exportExcel()">Скачать Excel файл</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwvFRokLVwoeNgtrcwtPgydfs9GsaFYDB8WrwIFmiBB_nP2mUB4lylHRRJfejPDwbSm/exec";
+
+    const CATEGORIES = {
+        'Доход': ['Ремонт одежды', 'Пошив', 'Продажа товаров', 'Аренда', 'Прочее'],
+        'Расход': ['Материалы', 'Зарплата', 'Аренда помещения', 'Реклама', 'Коммунальные', 'Оборудование', 'Прочее']
+    };
+
+    const PRODUCT_RULES = [
+        { name: "Джинсы/Брюки", keywords: ["джинс", "брюк", "штан", "лосины"] },
+        { name: "Платья/Юбки", keywords: ["плать", "юбк", "сарафан"] },
+        { name: "Верхняя одежда", keywords: ["курт", "пальто", "плащ", "пуховик", "шуб", "жилет"] },
+        { name: "Молнии/Фурнитура", keywords: ["молни", "бегун", "кнопк", "пуговиц"] },
+        { name: "Шторы/Текстиль", keywords: ["штор", "тюль", "наволоч", "постель", "одеял", "плед"] },
+        { name: "Рюкзаки/Сумки", keywords: ["рюкзак", "сумк", "чемодан"] }
+    ];
+
+    const CHART_COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF'];
+
+    Chart.register(ChartDataLabels);
+
+    const escapeHtml = (unsafe) => {
+        if (unsafe === null || unsafe === undefined) return '';
+        return String(unsafe)
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
+    const app = {
+        data: [], filteredData: [], displayData: [],
+        state: { page: 1, rows: 20 },
+        charts: { trend: null, cat: null, prod: null },
+        cache: { clients: [], descriptions: [] },
+
+        init: () => {
+            app.setQuickDate(0); // Ставим "Сегодня" при запуске
+            app.updateCategories();
+            app.initMonths();
+        },
+
+        // Функция для кнопок "Вчера/Сегодня"
+        setQuickDate: (offset) => {
+            const d = new Date();
+            d.setDate(d.getDate() + offset);
+            // Корректировка на часовой пояс
+            const offsetDate = new Date(d.getTime() - (d.getTimezoneOffset() * 60000));
+            document.getElementById('opDate').value = offsetDate.toISOString().split('T')[0];
+        },
+
+        initMonths: async () => {
+            app.setStatus('loading');
+            try {
+                const res = await fetch(`${API_URL}?action=getMonths`);
+                if (!res.ok) throw new Error("Ошибка загрузки");
+                const json = await res.json();
+                const sel = document.getElementById('monthPicker');
+                sel.innerHTML = '';
+                if (json.months && json.months.length > 0) {
+                    json.months.forEach(m => {
+                        const [y, mn] = m.split('-');
+                        const dateName = new Date(y, mn-1).toLocaleDateString('ru-RU', {month: 'long'});
+                        const opt = document.createElement('option');
+                        opt.value = m; 
+                        opt.innerText = dateName.charAt(0).toUpperCase() + dateName.slice(1) + ` ${y}`;
+                        sel.appendChild(opt);
+                    });
+                    const now = new Date();
+                    const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                    if (sel.querySelector(`option[value="${currentKey}"]`)) { sel.value = currentKey; }
+                    app.loadData();
+                } else {
+                    const cur = new Date();
+                    const val = cur.getFullYear() + '-' + String(cur.getMonth()+1).padStart(2,'0');
+                    const opt = document.createElement('option'); opt.value = val; opt.innerText = "Текущий месяц"; sel.appendChild(opt);
+                    app.loadData();
+                }
+            } catch(e) { console.error(e); app.setStatus('offline'); }
+        },
+
+        loadData: async () => {
+            const selectedMonth = document.getElementById('monthPicker').value;
+            if(!selectedMonth) return;
+            const [year, month] = selectedMonth.split('-');
+            app.setStatus('loading');
+            try {
+                const res = await fetch(`${API_URL}?month=${month}&year=${year}`);
+                if (!res.ok) throw new Error("Ошибка сервера");
+                app.data = await res.json();
+                app.data.sort((a,b) => new Date(b.date) - new Date(a.date));
+                app.applyFilters();
+                app.updateStats(); 
+                app.updateDatalists(); 
+                app.setStatus('online');
+                if(document.getElementById('analytics').classList.contains('active')) app.generateAnalytics();
+            } catch(e) { console.error(e); app.setStatus('offline'); app.showToast('Ошибка загрузки', '#e84c3d'); }
+        },
+
+        updateStats: () => { 
+            const inc = app.data.filter(r => r.type === 'Доход').reduce((a,b) => a + Number(b.amount), 0);
+            const exp = app.data.filter(r => r.type === 'Расход').reduce((a,b) => a + Number(b.amount), 0);
+            const bal = inc - exp;
+            
+            document.getElementById('headInc').innerText = inc.toLocaleString() + ' ₽';
+            document.getElementById('headInc').style.color = 'var(--success)';
+            document.getElementById('headExp').innerText = exp.toLocaleString() + ' ₽';
+            document.getElementById('headExp').style.color = 'var(--accent)';
+            document.getElementById('headBal').innerText = bal.toLocaleString() + ' ₽';
+            document.getElementById('headBal').style.color = bal >= 0 ? 'var(--success)' : 'var(--accent)';
+        },
+
+        updateDatalists: () => { 
+            app.cache.clients = [...new Set(app.data.map(i => i.client).filter(Boolean))].sort();
+            app.cache.descriptions = [...new Set(app.data.map(i => i.description).filter(Boolean))].sort();
+            document.getElementById('clientList').innerHTML = '';
+            document.getElementById('descList').innerHTML = '';
+        },
+
+        onInput: (el, listId, cacheKey) => {
+            const list = document.getElementById(listId);
+            const val = el.value;
+            if (val.length === 0) {
+                list.innerHTML = ''; 
+            } else if (list.innerHTML === '') {
+                list.innerHTML = app.cache[cacheKey].map(i => `<option value="${i}">`).join('');
+            }
+        },
+
+        applyFilters: () => {
+            const q = (document.querySelector('input[placeholder="🔍 Поиск..."]').value || '').toLowerCase();
+            const showInc = document.getElementById('filterInc').checked;
+            const showExp = document.getElementById('filterExp').checked;
+            app.displayData = app.data.filter(item => {
+                const matchText = (item.client && item.client.toLowerCase().includes(q)) || (item.description && item.description.toLowerCase().includes(q));
+                const matchType = (item.type === 'Доход' && showInc) || (item.type === 'Расход' && showExp);
+                return (q ? matchText : true) && matchType;
+            });
+            app.state.page = 1;
+            app.renderTable();
+        },
+
+        handleSearch: () => { app.applyFilters(); },
+
+        switchTab: (id) => {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            const btns = document.querySelectorAll('.tab-btn');
+            if(id==='operations') btns[0].classList.add('active');
+            if(id==='analytics') btns[1].classList.add('active');
+            if(id==='reports') btns[2].classList.add('active');
+            if(id === 'operations') app.resetForm();
+            if(id === 'analytics') app.generateAnalytics();
+        },
+
+        submitForm: async () => {
+            const amount = document.getElementById('opAmount').value;
+            const cat = document.getElementById('opCategory').value;
+            if(!amount) return app.showToast('Укажите сумму!', '#f39c12');
+            const id = document.getElementById('editId').value;
+            const ser = document.getElementById('opCheckSeries').value.trim();
+            const num = document.getElementById('opCheckNumber').value.trim();
+            let fullCheck = num; if (ser) fullCheck = ser + (num ? " " + num : "");
+            const payload = {
+                action: !!id ? 'edit' : 'add', id: id || null,
+                date: document.getElementById('opDate').value,
+                type: document.getElementById('opType').value, category: cat, amount: amount,
+                checkNum: fullCheck, client: document.getElementById('opClient').value,
+                payment: document.getElementById('opPayment').value, accepted: document.getElementById('opStatus').value,
+                description: document.getElementById('opDesc').value
+            };
+            
+            const btn = document.getElementById('saveBtn'); 
+            const spinner = document.getElementById('btnSpinner'); 
+            const btnText = document.getElementById('saveBtnText');
+            
+            btn.disabled = true; 
+            spinner.style.display = 'inline-block'; 
+            btnText.innerText = 'Ждите...';
+            
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                if (!res.ok) throw new Error("Сетевая ошибка");
+                const result = await res.json();
+                if (result.result === 'success' || result.result === 'updated') {
+                    app.showToast('Успешно сохранено', '#27ae60'); app.resetForm(); app.loadData();
+                } else { throw new Error(result.error || "Ошибка сервера"); }
+            } catch(e) { console.error(e); app.showToast('Ошибка: ' + e.message, '#e84c3d'); } 
+            finally { 
+                btn.disabled = false; 
+                spinner.style.display = 'none'; 
+                btnText.innerText = 'Сохранить'; 
+            }
+        },
+
+        editRec: (id) => {
+            const r = app.data.find(i => String(i.id) === String(id));
+            if(!r) return;
+            document.getElementById('editId').value = r.id;
+            document.getElementById('opDate').value = r.date;
+            document.getElementById('opType').value = r.type;
+            app.updateCategories(); 
+            document.getElementById('opCategory').value = r.category; 
+            document.getElementById('opAmount').value = r.amount;
+            
+            const chk = String(r.checkNum || '');
+            if(chk.includes(' ')) {
+                const parts = chk.split(' ');
+                document.getElementById('opCheckSeries').value = parts[0];
+                document.getElementById('opCheckNumber').value = parts.slice(1).join(' ');
+            } else {
+                document.getElementById('opCheckSeries').value = '';
+                document.getElementById('opCheckNumber').value = chk;
+            }
+            document.getElementById('opClient').value = r.client || '';
+            document.getElementById('opPayment').value = r.payment;
+            document.getElementById('opStatus').value = r.accepted;
+            document.getElementById('opDesc').value = r.description || '';
+            
+            document.getElementById('formTitle').innerText = 'Редактирование';
+            document.getElementById('saveBtnText').innerText = 'Изменить';
+            document.getElementById('cancelBtn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+
+        deleteRec: async (id) => {
+            if(!confirm('Удалить запись?')) return;
+            try { 
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: id }) });
+                if(!res.ok) throw new Error("Ошибка удаления");
+                app.showToast('Удалено', '#e84c3d'); app.loadData(); 
+            } catch(e) { app.showToast('Ошибка', '#e84c3d'); }
+        },
+
+        resetForm: () => {
+            document.getElementById('editId').value = ''; 
+            document.getElementById('opAmount').value = '';
+            document.getElementById('opCheckNumber').value = '';
+            document.getElementById('opClient').value = ''; 
+            document.getElementById('opDesc').value = '';
+            document.getElementById('formTitle').innerText = 'Новая запись';
+            document.getElementById('saveBtnText').innerText = 'Сохранить';
+            document.getElementById('cancelBtn').classList.add('hidden');
+            app.setQuickDate(0); // Возвращаем дату на сегодня
+        },
+
+        renderTable: () => {
+            const tbody = document.getElementById('tableBody');
+            const start = (app.state.page - 1) * app.state.rows;
+            const end = start + app.state.rows;
+            const pageData = app.displayData.slice(start, end);
+            if(!pageData.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px">Нет данных</td></tr>'; document.getElementById('paginationControls').innerHTML = ''; return; }
+            tbody.innerHTML = pageData.map(r => `
+                <tr>
+                    <td data-label="Дата">${new Date(r.date).toLocaleDateString()}</td>
+                    <td data-label="Тип"><span class="badge ${r.type=='Доход'?'bg-inc':'bg-exp'}">${r.type}</span></td>
+                    <td data-label="Категория">${escapeHtml(r.category)}</td>
+                    <td data-label="Сумма"><b>${Number(r.amount).toLocaleString()} ₽</b></td>
+                    <td data-label="Клиент">${escapeHtml(r.client || '-')}</td>
+                    <td data-label="№ Чека">${escapeHtml(r.checkNum || '-')}</td>
+                    <td data-label="Оплата">${r.payment}</td>
+                    <td data-label="Описание" style="font-size:13px; color:#7f8c8d; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${escapeHtml(r.description || '')}</td>
+                    <td data-label="Действия">
+                        <div style="display:flex; justify-content:flex-end; gap:10px; width:100%">
+                            <button class="btn btn-sm btn-primary" style="flex:1" onclick="app.editRec('${r.id}')">✏️</button>
+                            <button class="btn btn-sm btn-danger" style="flex:1" onclick="app.deleteRec('${r.id}')">✕</button>
+                        </div>
+                    </td>
+                </tr>`).join('');
+            const total = Math.ceil(app.displayData.length / app.state.rows);
+            document.getElementById('paginationControls').innerHTML = total > 1 ? `<span style="font-size:13px; color:#777; margin-right:10px">Стр. ${app.state.page}/${total}</span><button class="btn btn-sm btn-ghost" onclick="app.state.page--; app.renderTable()" ${app.state.page==1?'disabled':''}>←</button><button class="btn btn-sm btn-ghost" onclick="app.state.page++; app.renderTable()" ${app.state.page==total?'disabled':''}>→</button>` : '';
+        },
+
+        generateAnalytics: () => {
+            if(!app.data.length) return;
+            let inc=0, exp=0, totalOrders=0, mData={};
+            let catStats = {};
+            let productStats = {};
+            PRODUCT_RULES.forEach(rule => productStats[rule.name] = {count:0, sum:0});
+            productStats['Прочее'] = {count:0, sum:0};
+
+            app.data.forEach(i => {
+                const amt = Number(i.amount);
+                const d = i.date;
+                if(!mData[d]) mData[d] = {inc:0, exp:0};
+                
+                // === ИСПРАВЛЕНИЕ: Сбор категорий для ВСЕХ типов ===
+                if(!catStats[i.category]) catStats[i.category] = 0; 
+                catStats[i.category]+=amt;
+
+                if(i.type === 'Доход') { 
+                    inc+=amt; mData[d].inc+=amt; totalOrders++;
+                    
+                    const desc = (i.description || "").toLowerCase();
+                    let matched = false;
+                    for (let rule of PRODUCT_RULES) {
+                        if (rule.keywords.some(k => desc.includes(k))) {
+                            productStats[rule.name].sum += amt; productStats[rule.name].count += 1; matched = true; break;
+                        }
+                    }
+                    if (!matched) { productStats['Прочее'].sum += amt; productStats['Прочее'].count += 1; }
+                } else { 
+                    exp+=amt; mData[d].exp+=amt; 
+                }
+            });
+
+            const bal = inc - exp; const prof = inc > 0 ? (bal/inc*100).toFixed(1) : 0;
+            
+            document.getElementById('analyticsComparison').innerHTML = `<div class="comparison-card"><div class="comparison-value" style="color:var(--success)">${inc.toLocaleString()} ₽</div><div class="comparison-label">Доход</div></div><div class="comparison-card"><div class="comparison-value" style="color:var(--accent)">${exp.toLocaleString()} ₽</div><div class="comparison-label">Расход</div></div><div class="comparison-card"><div class="comparison-value" style="color:${bal>=0?'var(--success)':'var(--accent)'}">${bal.toLocaleString()} ₽</div><div class="comparison-label">Баланс</div></div><div class="comparison-card"><div class="comparison-value">${prof}%</div><div class="comparison-label">Рентабельность</div></div><div class="comparison-card"><div class="comparison-value" style="color:var(--info)">${totalOrders}</div><div class="comparison-label">Заказов</div></div>`;
+
+            const dates = Object.keys(mData).sort();
+            if(app.charts.trend) app.charts.trend.destroy();
+            app.charts.trend = new Chart(document.getElementById('trendChart'), {
+                type: 'bar',
+                data: { labels: dates.map(d => new Date(d).getDate()), datasets: [{ label:'Доход', data: dates.map(d=>mData[d].inc), backgroundColor:'#27ae60' }, { label:'Расход', data: dates.map(d=>mData[d].exp), backgroundColor:'#e84c3d' }] },
+                options: { responsive:true, maintainAspectRatio:false, plugins: { datalabels: { display: false } } }
+            });
+
+            const pieOptions = { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 12 }, formatter: (value) => value === 0 ? '' : (value > 1000 ? (value/1000).toFixed(1) + 'к' : value) } } };
+            const topCats = Object.entries(catStats).sort((a,b)=>b[1]-a[1]);
+            if(app.charts.cat) app.charts.cat.destroy();
+            app.charts.cat = new Chart(document.getElementById('catChart'), { type: 'doughnut', data: { labels: topCats.map(i=>i[0]), datasets: [{ data: topCats.map(i=>i[1]), backgroundColor: ['#3498db', '#2ecc71', '#9b59b6', '#f1c40f', '#e74c3c'] }] }, options: pieOptions });
+
+            const validProducts = Object.entries(productStats).filter(entry => entry[1].sum > 0).sort((a,b) => b[1].sum - a[1].sum);
+            if(app.charts.prod) app.charts.prod.destroy();
+            app.charts.prod = new Chart(document.getElementById('productChart'), {
+                type: 'pie',
+                data: { labels: validProducts.map(p => p[0]), datasets: [{ data: validProducts.map(p => p[1].sum), backgroundColor: CHART_COLORS }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { color: '#fff', font: { weight: 'bold', size: 12 }, formatter: (value) => value === 0 ? '' : (value > 1000 ? (value/1000).toFixed(1) + 'к' : value) } } }
+            });
+
+            document.getElementById('productTableBody').innerHTML = validProducts.map((p, index) => {
+                const color = CHART_COLORS[index % CHART_COLORS.length];
+                return `<tr><td><div class="product-name-cell"><span class="color-dot" style="background:${color}"></span>${p[0]}</div></td><td>${p[1].count}</td><td><b>${p[1].sum.toLocaleString()} ₽</b></td></tr>`
+            }).join('');
+        },
+
+        exportExcel: () => {
+            if (!app.data.length) return app.showToast('Нет данных', '#f39c12');
+            const exportData = app.data.map(item => ({ "Дата": new Date(item.date).toLocaleDateString('ru-RU'), "Тип": item.type, "Категория": item.category, "Сумма": Number(item.amount), "Документ": item.checkNum || '', "Клиент": item.client || '', "Описание": item.description || '' }));
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Отчет");
+            XLSX.writeFile(wb, `Отчет_${document.getElementById('monthPicker').value}.xlsx`);
+        },
+        
+        updateCategories: () => { const type = document.getElementById('opType').value; const sel = document.getElementById('opCategory'); sel.innerHTML = ''; if(CATEGORIES[type]) CATEGORIES[type].forEach(c => sel.add(new Option(c,c))); },
+        
+        setStatus: (s) => { 
+            const dot = document.getElementById('statusDot');
+            const txt = document.getElementById('statusText'); 
+            const loader = document.getElementById('globalLoader');
+
+            if(s==='loading') { 
+                dot.style.color='var(--warning)'; 
+                txt.innerText='Загрузка...'; 
+                if(loader) loader.style.display = 'flex'; 
+            } else if(s==='online') { 
+                dot.style.color='var(--success)'; 
+                txt.innerText='Онлайн'; 
+                if(loader) setTimeout(() => loader.style.display = 'none', 300); 
+            } else { 
+                dot.style.color='var(--accent)'; 
+                txt.innerText='Оффлайн'; 
+                if(loader) loader.style.display = 'none';
+            } 
+        },
+        
+        showToast: (text, color) => { const t = document.getElementById('toast'); t.innerText = text; t.className = 'toast ' + (color === '#27ae60' ? 'toast-success' : color === '#e84c3d' ? 'toast-error' : 'toast-warn'); t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
+    };
+
+    window.onload = app.init;
+</script>
+
+</body>
+</html>
