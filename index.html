@@ -37,9 +37,6 @@
             
             --shadow-float: 0 10px 30px rgba(99, 102, 241, 0.25);
             --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05);
-            
-            --safe-top: env(safe-area-inset-top, 20px);
-            --safe-bottom: env(safe-area-inset-bottom, 20px);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -206,7 +203,7 @@
         .close-btn { font-size: 24px; color: var(--text-sec); background: none; border: none; cursor: pointer; padding: 4px; }
 
         .modal-form-body { display: flex; flex-direction: column; gap: 8px; }
-        /* Date input ТОЛЬКО в форме - предотвращает смещение */
+        /* Date input в форме - предотвращение смещения */
         .modal-form-body input[type="date"] {
             font-size: 16px;
             width: 100%;
@@ -297,7 +294,7 @@
             td:nth-child(4) { font-size: 18px; font-weight: 800; }
             td[data-label="Описание"] { display: block; text-align: left; margin-top: 8px; }
             td[data-label="Описание"]::before { display: block; margin-bottom: 4px; }
-
+            /* Мобильные стили для header и иконки */
             .header-banner { 
                 height: 80px; 
                 min-height: 80px;
