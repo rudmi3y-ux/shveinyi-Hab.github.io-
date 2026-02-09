@@ -289,6 +289,28 @@
             td:nth-child(4) { font-size: 18px; font-weight: 800; }
             td[data-label="Описание"] { display: block; text-align: left; margin-top: 8px; }
             td[data-label="Описание"]::before { display: block; margin-bottom: 4px; }
+            /* Fix: Header для iPhone 16 Pro */
+            .header-banner { 
+                height: 80px; 
+                min-height: 80px; 
+            }
+            .logo-img { 
+                width: 30px; 
+                height: 30px; 
+            }
+            .header-controls { 
+                gap: 6px; 
+            }
+            .header-title-box .app-title {
+                font-size: 18px;
+            }
+            .header-title-box .app-status {
+                font-size: 11px;
+            }
+            #monthPicker {
+                font-size: 12px;
+                padding: 5px 8px;
+            }
         }
 
         .tab-content { display: none; animation: fade 0.3s; padding-bottom: 40px; }
