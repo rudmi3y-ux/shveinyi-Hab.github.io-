@@ -17,6 +17,8 @@
     <style>
         /* === UI THEME === */
         :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 34px);
             --primary: #6366f1;
             --primary-bg: #6366f1;
             --primary-dark: #4f46e5;
@@ -42,6 +44,8 @@
 
         @media (prefers-color-scheme: dark) {
             :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 34px);
                 --bg-body: #121212;
                 --bg-card: #1E1E1E;
                 --text-main: #E5E7EB;
@@ -71,13 +75,13 @@
             margin: 0 auto; 
             height: 100%; 
             overflow-y: auto; 
-            padding: 20px;
+            padding-top: calc(var(--safe-top) + 10px); padding-left: 20px; padding-right: 20px; padding-bottom: calc(100px + var(--safe-bottom));
             padding-top: calc(var(--safe-top) + 10px);
             padding-bottom: calc(var(--safe-bottom) + 100px);
             scrollbar-width: none; 
             -ms-overflow-style: none;
             -webkit-overflow-scrolling: touch;
-        }
+        } scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch;
         .container::-webkit-scrollbar { display: none; }
 
         .header-banner {
@@ -242,7 +246,7 @@
                 margin-bottom: 0; 
                 border: 1px solid var(--border); 
                 background: var(--bg-card); 
-                padding: 20px; 
+                padding-top: calc(var(--safe-top) + 10px); padding-left: 20px; padding-right: 20px; padding-bottom: calc(100px + var(--safe-bottom)); 
                 border-radius: 16px;
                 height: 100%;
             }
@@ -251,7 +255,17 @@
         }
 
         @media (max-width: 1023px) {
-            .container { padding-bottom: calc(100px + env(safe-area-inset-bottom)); } 
+            
+            /* Fix: Поля формы вертикально на iPhone */
+            .modal-form-body > div > div[style*="grid-template-columns"] {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 12px !important;
+            }
+            /* Fix table cells не шире экрана */
+            tr { max-width: 100vw; }
+            td { word-break: break-word; max-width: 40vw; }
+ 
             .desktop-tabs { display: none; }
             .bottom-nav { display: flex; }
             .stats-row { display: flex; overflow-x: auto; gap: 12px; padding-bottom: 5px; scrollbar-width: none; }
@@ -275,12 +289,6 @@
             td:nth-child(4) { font-size: 18px; font-weight: 800; }
             td[data-label="Описание"] { display: block; text-align: left; margin-top: 8px; }
             td[data-label="Описание"]::before { display: block; margin-bottom: 4px; }
-        
-            /* Fix: Поля Дата и Сумма по вертикали на мобильных */
-            .modal-form-body > div > div[style*="grid-template-columns: 1fr 1fr"] {
-                display: flex !important;
-                flex-direction: column !important;
-            }
         }
 
         .tab-content { display: none; animation: fade 0.3s; padding-bottom: 40px; }
