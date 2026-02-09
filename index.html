@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
     <title>Учет мастерской "Швейный HUB"</title>
     
     <link rel="icon" type="image/png" href="icon.png">
@@ -209,6 +209,15 @@
 
         .compact-label { display: block; font-size: 11px; color: var(--text-sec); margin-bottom: 4px; font-weight: 700; text-transform: uppercase; }
         .inp-field { width: 100%; background: var(--input-bg); border: 1px solid transparent; padding: 12px 14px; border-radius: 14px; font-size: 16px; color: var(--text-main); outline: none; transition: 0.2s; font-weight: 500; }
+        
+        input[type="date"] {
+            font-size: 16px;
+            -webkit-appearance: none;
+            appearance: none;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
         .inp-field:focus { background: var(--bg-card); border-color: var(--primary-bg); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
         
         .form-section { background: transparent; padding: 0 0 15px 0; margin-bottom: 15px; border-bottom: 1px solid var(--border); }
@@ -289,28 +298,36 @@
             td:nth-child(4) { font-size: 18px; font-weight: 800; }
             td[data-label="Описание"] { display: block; text-align: left; margin-top: 8px; }
             td[data-label="Описание"]::before { display: block; margin-bottom: 4px; }
-            /* Fix: Header для iPhone 16 Pro */
-            .header-banner { 
-                height: 80px; 
-                min-height: 80px; 
+            /* КРИТИЧНО: Таблица НЕ шире экрана iPhone */
+            .table-container {
+                max-width: 100vw !important;
+                overflow-x: hidden !important;
             }
-            .logo-img { 
-                width: 30px; 
-                height: 30px; 
+            table {
+                max-width: 100vw !important;
+                table-layout: fixed !important;
             }
-            .header-controls { 
-                gap: 6px; 
+            tr {
+                max-width: 100vw !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
             }
-            .header-title-box .app-title {
-                font-size: 18px;
+            td {
+                max-width: 35vw !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+                white-space: normal !important;
+                hyphens: auto !important;
             }
-            .header-title-box .app-status {
-                font-size: 11px;
+            td::before {
+                flex-shrink: 0 !important;
+                min-width: 0 !important;
             }
-            #monthPicker {
-                font-size: 12px;
-                padding: 5px 8px;
+            input[type="date"] {
+                font-size: 16px !important;
+                max-width: 100vw !important;
             }
+
         }
 
         .tab-content { display: none; animation: fade 0.3s; padding-bottom: 40px; }
